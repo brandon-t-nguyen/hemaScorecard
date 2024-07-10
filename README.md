@@ -6,33 +6,45 @@ Software to run and manage tournaments.
 Developed by Sean Franklin
 A HEMA Alliance supported project
 
-## Running in docker
-Install [docker](https://docs.docker.com/install/) and [docker compose] (https://docs.docker.com/compose/install/).
-After that simply issue docker-compose up in the source root directory. The application will be avaliable on http://localhost:8000
-PHP docker image contains xdebug, and project contains sample VS Code config which allows user to debug application via "Listen for XDebug" command.
+## Running in Docker
+Install [Docker](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/install/).
 
-## Data persistence
-In order to persist data after the first, initial run, comment out first volume in db service (`- ./includes:/docker-entrypoint-initdb.d`) and uncomment the second one (`./data:/var/lib/mysql`)
-Data is persisted in ./data folder.
+After that simply run
+```bash
+$ docker-compose up
+```
+in the source root directory. The application will be avaliable on http://localhost:8000.
+The PHP Docker image contains Xdebug and this repository contains a sample VS Code config in `.vscode` which allows the
+user to debug application via the "Listen for XDebug" command.
+
+### Data persistence
+The `docker-compose.yml` file is set up so that the `./initdb` directory is mounted at `/docker-entrypoint-initdb.d`
+(database initialization scripts) and
+the `./data` directory is mounted at `/var/lib/mysql` (the database itself). The database's data is thus persisted in
+`./data`, and the directory will be created by Docker if it does not exist.
+
+When `./data` is not present/is empty (i.e. when you first run the application) the database container will run the
+scripts in `./initdb` to initialize the database. Further runs of the application will not re-run the database
+initialization scripts unless you delete `./data`.
 
 ### Troubleshooting
-In case of issues with running web container (`xdebug install failed`) issue
+In case of issues with running the `web` container (`xdebug install failed`) issue
 
 ```bash
 $ docker-compose down
 $ docker composer rm -fsv
 ```
 
-If there is a need to get inside running container simply issue 
+If there is a need to get inside a running container simply run
 
 ```bash
 $ docker-compose exec db /bin/bash
-``` 
+```
 
-to get into mysql container, and 
+to get into `db` container, and
 
 ```bash
 $ docker-compose exec web /bin/bash
 ```
 
-to get to the web container, respectively.
+to get into the `web` container, respectively.
