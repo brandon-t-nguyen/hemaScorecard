@@ -5,7 +5,7 @@ services:
     ports:
       - "8000:8000"
 
-    volumes: 
+    volumes:
       - .:/hemaScorecard
 
     command: >
@@ -30,6 +30,6 @@ services:
 
     volumes:
       # comment line below after first run
-      # - ./includes:/docker-entrypoint-initdb.d
+      - ./initdb:/docker-entrypoint-initdb.d
       # uncomment line below after first run
       - ./data:/var/lib/mysql
