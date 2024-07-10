@@ -5,7 +5,6 @@
 INSERT INTO systemUsers(
             userName,
             userEmail,
-            EVENT_YOUTUBE,
             EVENT_SCOREKEEP,
             EVENT_MANAGEMENT,
             SOFTWARE_EVENT_SWITCHING,
@@ -16,4 +15,4 @@ INSERT INTO systemUsers(
             VIEW_HIDDEN,
             VIEW_SETTINGS,
             VIEW_EMAIL)
-    values ('admin', 'admin@hemascorecard.com', 1,1,1,1,1,1,1,1,1,1,1);
+    values ('admin', 'admin@hemascorecard.com', 1,1,1,1,1,1,1,1,1,1);
