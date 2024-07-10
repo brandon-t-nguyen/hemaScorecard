@@ -11,7 +11,7 @@ Install [Docker](https://docs.docker.com/install/) and [Docker Compose](https://
 
 After that simply run
 ```bash
-$ docker-compose up
+$ docker compose up
 ```
 in the source root directory. The application will be avaliable on http://localhost:8000.
 The PHP Docker image contains Xdebug and this repository contains a sample VS Code config in `.vscode` which allows the
@@ -31,20 +31,20 @@ initialization scripts unless you delete `./data`.
 In case of issues with running the `web` container (`xdebug install failed`) issue
 
 ```bash
-$ docker-compose down
-$ docker composer rm -fsv
+$ docker compose down
+$ docker compose rm -fsv
 ```
 
 If there is a need to get inside a running container simply run
 
 ```bash
-$ docker-compose exec db /bin/bash
+$ docker compose exec db /bin/bash
 ```
 
 to get into `db` container, and
 
 ```bash
-$ docker-compose exec web /bin/bash
+$ docker compose exec web /bin/bash
 ```
 
 to get into the `web` container, respectively.
