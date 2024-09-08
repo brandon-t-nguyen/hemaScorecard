@@ -3,45 +3,105 @@
 require_once __DIR__."/../includes/db.php";
 
 require_once __DIR__."/person.php";
+require_once __DIR__."/team.php";
 
-function match_from_row($row) {
-    $event = array();
-    $event['id']                = $row[0];
-    $event['fighter1']          = get_person_event($row[1]);
-    $event['fighter2']          = get_person_event($row[2]);
-    $event['winner_id']         = $row[3];
-    $event['fighter1_score']    = $row[4];
-    $event['fighter2_score']    = $row[5];
-    $event['match_complete']    = (bool) $row[6];
-    $event['match_time']        = $row[7];
-    return $event;
+function get_match_status($match_id, $connector = null) {
+    if ($connector) {
+        $mysqli = $connector;
+    } else {
+        $mysqli = db_connector();
+    }
+
+    $status = array();
+
+    $stmt = $mysqli->prepare(
+"
+SELECT
+    fighter1Score,
+    fighter2Score,
+    matchComplete,
+    winnerID,
+    matchTime
+FROM
+    eventMatches
+WHERE
+    eventMatches.matchID = ?
+"
+    );
+    $stmt->bind_param('i', $match_id);
+    $stmt->execute();
+    if ($result = $stmt->get_result()) {
+        $row = $result->fetch_assoc();
+        $status['scores'] = array($row['fighter1Score'], $row['fighter2Score']);
+        $status['time'] = $row['matchTime'];
+        $status['complete'] = (bool) $row['matchComplete'];
+        $status['winner_id'] = $row['winnnerID'];
+        $status['exchanges'] = match_get_exchanges($match_id, $mysqli);
+    }
+
+    if (!$connector) {
+        $mysqli->close();
+    }
+    return $status;
 }
 
 function get_match($match_id) {
     $mysqli = db_connector();
 
-    $sql = "
-            SELECT
-                eventMatches.matchID,
-                eventMatches.fighter1ID,
-                eventMatches.fighter2ID,
-                eventMatches.winnerID,
-                eventMatches.fighter1Score,
-                eventMatches.fighter2Score,
-                eventMatches.matchComplete,
-                eventMatches.matchTime
-            FROM eventMatches
-            WHERE eventMatches.matchID = '{$match_id}'
-           ";
+    $stmt = $mysqli->prepare(
+"
+SELECT
+    eventMatches.matchID
+    , eventMatches.groupID
+    , eventMatches.matchNumber
+    , eventMatches.fighter1ID
+    , eventMatches.fighter2ID
+    , eventGroups.groupName
+    , eventTournaments.tournamentID
+    , eventTournaments.isTeams
+    , sTWeapon.tournamentType as tournamentWeapon
+    , sTPrefix.tournamentType as tournamentPrefix
+    , sTGender.tournamentType as tournamentGender
+    , sTMaterial.tournamentType as tournamentMaterial
+FROM
+    eventMatches
+INNER JOIN eventGroups ON eventGroups.groupID = eventMatches.groupID
+INNER JOIN eventTournaments ON eventTournaments.tournamentID = eventGroups.tournamentID
+INNER JOIN systemTournaments as sTWeapon ON sTWeapon.tournamentTypeID = eventTournaments.tournamentWeaponID
+INNER JOIN systemTournaments as sTPrefix ON sTPrefix.tournamentTypeID = eventTournaments.tournamentPrefixID
+INNER JOIN systemTournaments as sTGender ON sTGender.tournamentTypeID = eventTournaments.tournamentGenderID
+INNER JOIN systemTournaments as sTMaterial ON sTMaterial.tournamentTypeID = eventTournaments.tournamentMaterialID
+WHERE
+    eventMatches.matchID = ?
+"
+    );
+    //printf("Error: %s\n", $mysqli->error);
+    $stmt->bind_param('i', $match_id);
+    $stmt->execute();
 
-    if ($result = $mysqli -> query($sql)) {
-        $out = match_from_row($result -> fetch_row());
-    } else {
-        $out = null;
+    $match = null;
+    if ($result = $stmt->get_result()) {
+        $row = $result->fetch_assoc();
+
+        $match = array();
+        $match['id']            = $row['matchID'];
+        $match['group_id']      = $row['groupID'];
+        $match['group_name']    = $row['groupName'];
+        $match['tournament_id'] = $row['tournamentID'];
+        $match['tournament_name'] = trim($row['tournamentGender'] . " ". $row['tournamentMaterial'] . " " . $row['tournamentWeapon'] . " - " . $row['tournamentPrefix']);
+
+        if ($row['isTeams'] == 1) {
+            $match['fighters'] = null;
+            $match['teams']    = array(get_team($row['fighter1ID']), get_team($row['fighter2ID']));
+        } else {
+            $match['fighters'] = array(get_person_event($row['fighter1ID']), get_person_event($row['fighter2ID']));
+            $match['teams']    = null;
+        }
+
+        $match['status'] = get_match_status($match_id, $mysqli);
     }
-
-    $mysqli -> close();
-    return $out;
+    $mysqli->close();
+    return $match;
 }
 
 function exchange_from_row($row) {
@@ -69,8 +129,12 @@ function exchange_from_row($row) {
     return $exchange;
 }
 
-function match_get_exchanges($match_id) {
-    $mysqli = db_connector();
+function match_get_exchanges($match_id, $connector) {
+    if ($connector) {
+        $mysqli = $connector;
+    } else {
+        $mysqli = db_connector();
+    }
 
     $sql =
 "
@@ -109,6 +173,8 @@ ORDER BY
         }
     }
 
-    $mysqli -> close();
+    if (!$connector) {
+        $mysqli->close();
+    }
     return $exchanges;
 }
