@@ -31,6 +31,7 @@ function handle_team_id($team_id, $params) {
         }
     } else {
         $method = $params[0];
+        response_todo();
         /*
         if ($method == "exchanges") {
             response_success(team_get_exchanges($team_id));
