@@ -71,6 +71,11 @@ function handle_events() {
 
 function handle_event_id($event_id, $params) {
     // /events/event.id
+    if (!is_uint($event_id)) {
+        response_error("not a valid event id", 400);
+        return;
+    }
+
     if (count($params) == 0) {
         $event = get_events(null, null, $event_id);
         if (is_null($event)) {
@@ -79,8 +84,8 @@ function handle_event_id($event_id, $params) {
             response_success($event);
         }
     } else {
-        $method = $params[0];
-        if ($method == "locations") {
+        $attr = $params[0];
+        if ($attr == "locations") {
             $locations = get_locations($event_id);
             response_success($locations);
         }

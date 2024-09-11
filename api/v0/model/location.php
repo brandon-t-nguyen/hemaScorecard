@@ -16,22 +16,42 @@ function location_from_row($row) {
 function get_locations($event_id = null, $location_id = null) {
     $mysqli = db_connector();
 
-    $sql = "
-            SELECT locationID, eventID, locationName, locationNameShort,
-                   hasMatches, hasClasses
-            FROM logisticsLocations
-           ";
+    $sql =
+"
+SELECT locationID
+     , eventID
+     , locationName 
+     , locationNameShort
+     , hasMatches
+     , hasClasses
+  FROM logisticsLocations
+";
 
+    $params = array();
+    $types = '';
     if ($event_id) {
-        $sql .= "WHERE eventID = '{$event_id}'\n";
+        $sql .= "WHERE eventID = ?\n";
+        array_push($params, $event_id);
+        $types .= 'i';
     }
 
     if ($location_id) {
-        $sql .= "WHERE locationID = '{$location_id}'\n";
+        $sql .= "WHERE locationID = ?\n";
+        array_push($params, $location_id);
+        $types .= 'i';
     }
 
+    $stmt = $mysqli->prepare($sql);
+
+    if (count($params) > 0) {
+        // bind the optional args
+        $stmt->bind_param($types, ...$params);
+    }
+
+    $stmt->execute();
+
     $locations = array();
-    if ($result = $mysqli -> query($sql)) {
+    if ($result = $stmt->get_result()) {
         while ($row = $result -> fetch_row()) {
             array_push($locations, location_from_row($row));
         }
@@ -44,7 +64,7 @@ function get_locations($event_id = null, $location_id = null) {
         $out = $locations;
     }
 
-    $mysqli -> close();
+    $mysqli->close();
     return $out;
 }
 
@@ -57,19 +77,23 @@ function location_get_active_match($location_id) {
     $mysqli = db_connector();
 
     $match = null;
-    $sql =  "
-                SELECT eventVideo.matchID
-                FROM eventVideoStreams
-                INNER JOIN eventVideo on eventVideoStreams.videoID = eventVideo.videoID
-                WHERE eventVideoStreams.locationID = '{$location_id}'
-            ";
+    $stmt = $mysqli->prepare(
+"
+    SELECT eventVideo.matchID
+      FROM eventVideoStreams
+INNER JOIN eventVideo on eventVideoStreams.videoID = eventVideo.videoID
+     WHERE eventVideoStreams.locationID = ?
+"
+    );
+    $stmt->bind_param('i', $location_id);
+    $stmt->execute();
 
-    if ($result = $mysqli -> query($sql)) {
-        $row = $result -> fetch_row();
+    if ($result = $stmt->get_result()) {
+        $row = $result->fetch_row();
         $match_id = $row[0];
         $match = $match_id;
     }
 
-    $mysqli -> close();
+    $mysqli->close();
     return $match;
 }

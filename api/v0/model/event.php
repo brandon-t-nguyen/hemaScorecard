@@ -20,32 +20,55 @@ function event_from_row($row) {
 function get_events($after = null, $before = null, $id = null, $limit=50, $offset=0) {
     $mysqli = db_connector();
 
-    $sql = "
-            SELECT systemEvents.eventID, systemEvents.eventName, systemEvents.eventAbbreviation,
-                   systemEvents.eventStartDate, systemEvents.eventEndDate, systemEvents.countryIso2,
-                   systemCountries.countryName, systemEvents.eventProvince, systemEvents.eventCity,
-                   systemEvents.eventStatus
-            FROM systemEvents
-            INNER JOIN systemCountries on systemEvents.countryIso2 = systemCountries.countryIso2
-           ";
+    $sql =
+"
+    SELECT systemEvents.eventID
+         , systemEvents.eventName
+         , systemEvents.eventAbbreviation
+         , systemEvents.eventStartDate
+         , systemEvents.eventEndDate
+         , systemEvents.countryIso2
+         , systemCountries.countryName
+         , systemEvents.eventProvince
+         , systemEvents.eventCity
+         , systemEvents.eventStatus
+      FROM systemEvents
+INNER JOIN systemCountries ON systemEvents.countryIso2 = systemCountries.countryIso2
+";
 
+    $params = array();
+    $types = '';
     if ($after and $before) {
-        $sql .= "WHERE eventStartDate BETWEEN '{$after}' AND '{$before}'\n";
+        $sql .= "WHERE eventStartDate BETWEEN '?' AND '?'\n";
+        array_push($params, $after, $before);
+        $types .= 'ss';
     } elseif ($after) {
-        $sql .= "WHERE eventStartDate >= '{$after}'\n";
+        $sql .= "WHERE eventStartDate >= '?'\n";
+        array_push($params, $after);
+        $types .= 's';
     } elseif ($before) {
-        $sql .= "WHERE eventStartDate <= '{$before}'\n";
+        $sql .= "WHERE eventStartDate <= '?'\n";
+        array_push($params, $before);
+        $types .= 's';
     }
 
     if ($id) {
-        $sql .= "WHERE eventID = {$id}\n";
+        $sql .= "WHERE eventID = ?\n";
+        array_push($params, $id);
+        $types .= 'i';
     }
 
     $sql .= "ORDER BY eventStartDate DESC\n";
-    $sql .= "LIMIT {$offset},{$limit}\n";
+    $sql .= "LIMIT ?,?\n";
+    array_push($params, $offset, $limit);
+    $types .= 'ii';
+
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
 
     $events = array();
-    if ($result = $mysqli -> query($sql)) {
+    if ($result = $stmt->get_result()) {
         while ($row = $result -> fetch_row()) {
             array_push($events, event_from_row($row));
         }
@@ -58,6 +81,6 @@ function get_events($after = null, $before = null, $id = null, $limit=50, $offse
         $out = count($events) > 0 ? $events[0] : null;
     }
 
-    $mysqli -> close();
+    $mysqli->close();
     return $out;
 }

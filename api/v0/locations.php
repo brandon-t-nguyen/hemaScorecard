@@ -9,10 +9,10 @@ require_once "model/location.php";
 $request = explode('/', trim($_SERVER['PATH_INFO'], '/'));
 $req_method = $_SERVER['REQUEST_METHOD'];
 if (count($request) < 2) {
-    // events
+    // locations
     handle_locations();
 } else {
-    // events/{event.id}
+    // location/{location.id}
     $location_id = $request[1];
     handle_location_id($location_id, array_slice($request, 2));
 }
@@ -24,6 +24,11 @@ function handle_locations() {
 
 function handle_location_id($location_id, $params) {
     // /locations/location.id
+    if (!is_uint($location_id)) {
+        response_error("not a valid location id", 400);
+        return;
+    }
+
     if (count($params) == 0) {
         $location = get_locations(null, $location_id);
         if (is_null($location)) {
@@ -32,8 +37,8 @@ function handle_location_id($location_id, $params) {
             response_success($location);
         }
     } else {
-        $method = $params[0];
-        if ($method == "active") {
+        $attr = $params[0];
+        if ($attr == "active") {
             $match = location_get_active_match($location_id);
             response_success($match);
         }

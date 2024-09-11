@@ -10,13 +10,10 @@ function get_team($team_id) {
 
     $sql =
 "
-SELECT
-    teamID,
-    memberName
-FROM
-    eventTeamRoster
-WHERE
-    memberRole = 'teamName' AND teamID = ?
+SELECT teamID
+     , memberName
+  FROM eventTeamRoster
+ WHERE memberRole = 'teamName' AND teamID = ?
 ";
 
     $stmt = $mysqli->prepare($sql);
@@ -32,14 +29,10 @@ WHERE
     $members = array();
     $sql =
 "
-SELECT
-    rosterID
-FROM
-    eventTeamRoster
-WHERE
-    memberRole = 'member' AND teamID = ?
-ORDER BY
-    teamOrder ASC
+  SELECT rosterID
+    FROM eventTeamRoster
+   WHERE memberRole = 'member' AND teamID = ?
+ORDER BY teamOrder ASC
 ";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $team_id);

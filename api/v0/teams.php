@@ -22,6 +22,10 @@ function handle_teams() {
 
 function handle_team_id($team_id, $params) {
     // /teams/team.id
+    if (!is_uint($team_id)) {
+        response_error("not a valid team id", 400);
+        return;
+    }
     if (count($params) == 0) {
         $team = get_team($team_id);
         if (is_null($team)) {

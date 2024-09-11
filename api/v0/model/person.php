@@ -24,60 +24,57 @@ function get_person_internal($person_id, $event=true) {
     $mysqli = db_connector();
 
     if ($event) {
-        $sql =  "
-                SELECT
-                    systemRoster.systemRosterID,
-                    systemRoster.firstName,
-                    systemRoster.middleName,
-                    systemRoster.lastName,
-                    systemRoster.nickname,
-                    systemRoster.gender,
-                    systemRoster.rosterCountry,
-                    systemRoster.rosterProvince,
-                    systemRoster.rosterCity,
-                    eventRoster.schoolID,
-                    systemSchools.schoolFullname,
-                    systemRoster.HemaRatingsID
-                FROM
-                    eventRoster
-                INNER JOIN
-                    systemRoster ON systemRoster.systemRosterID = eventRoster.systemRosterID
-                INNER JOIN
-                    systemSchools ON eventRoster.schoolID = systemSchools.schoolID
-                WHERE
-                    eventRoster.rosterID = '{$person_id}'
-        ";
+        $stmt = $mysqli->prepare(
+"
+    SELECT systemRoster.systemRosterID
+         , systemRoster.firstName
+         , systemRoster.middleName
+         , systemRoster.lastName
+         , systemRoster.nickname
+         , systemRoster.gender
+         , systemRoster.rosterCountry
+         , systemRoster.rosterProvince
+         , systemRoster.rosterCity
+         , eventRoster.schoolID
+         , systemSchools.schoolFullname
+         , systemRoster.HemaRatingsID
+      FROM eventRoster
+INNER JOIN systemRoster ON systemRoster.systemRosterID = eventRoster.systemRosterID
+INNER JOIN systemSchools ON eventRoster.schoolID = systemSchools.schoolID
+     WHERE eventRoster.rosterID = ?
+"
+        );
     } else {
-        $sql =  "
-                SELECT
-                    systemRoster.systemRosterID,
-                    systemRoster.firstName,
-                    systemRoster.middleName,
-                    systemRoster.lastName,
-                    systemRoster.nickname,
-                    systemRoster.gender,
-                    systemRoster.rosterCountry,
-                    systemRoster.rosterProvince,
-                    systemRoster.rosterCity,
-                    systemRoster.schoolID,
-                    systemSchools.schoolFullname,
-                    systemRoster.HemaRatingsID
-                FROM
-                    systemRoster
-                INNER JOIN
-                    systemSchools ON systemRoster.schoolID = systemSchools.schoolID
-                WHERE
-                    systemRoster.systemRosterID = '{$person_id}'
-        ";
+        $stmt = $mysqli->prepare(
+"
+    SELECT systemRoster.systemRosterID
+         , systemRoster.firstName
+         , systemRoster.middleName
+         , systemRoster.lastName
+         , systemRoster.nickname
+         , systemRoster.gender
+         , systemRoster.rosterCountry
+         , systemRoster.rosterProvince
+         , systemRoster.rosterCity
+         , systemRoster.schoolID
+         , systemSchools.schoolFullname
+         , systemRoster.HemaRatingsID
+      FROM systemRoster
+INNER JOIN systemSchools ON systemRoster.schoolID = systemSchools.schoolID
+     WHERE systemRoster.systemRosterID = ?
+"
+        );
     }
+    $stmt->bind_param('i', $person_id);
+    $stmt->execute();
 
-    if ($result = $mysqli -> query($sql)) {
-        $person = person_from_row($result -> fetch_row());
+    if ($result = $stmt->get_result()) {
+        $person = person_from_row($result->fetch_row());
     } else {
         $person = null;
     }
 
-    $mysqli -> close();
+    $mysqli->close();
     return $person;
 }
 

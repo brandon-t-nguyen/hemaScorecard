@@ -11,7 +11,7 @@ if (count($request) < 2) {
     // matches
     handle_matches();
 } else {
-    // mathces/{match.id}
+    // matches/{match.id}
     $match_id = $request[1];
     handle_match_id($match_id, array_slice($request, 2));
 }
@@ -22,6 +22,10 @@ function handle_matches() {
 
 function handle_match_id($match_id, $params) {
     // /matches/match.id
+    if (!is_uint($match_id)) {
+        response_error("not a valid match id", 400);
+        return;
+    }
     if (count($params) == 0) {
         $match = get_match($match_id);
         if (is_null($match)) {
