@@ -17,7 +17,7 @@ function event_from_row($row) {
     return $event;
 }
 
-function get_events($after = null, $before = null, $id = null, $limit=50, $offset=0) {
+function get_events($after = null, $before = null, $id = null, $limit=50, $offset=0, $name_contains=null) {
     $mysqli = db_connector();
 
     $sql =
@@ -56,6 +56,13 @@ INNER JOIN systemCountries ON systemEvents.countryIso2 = systemCountries.country
         $sql .= "WHERE eventID = ?\n";
         array_push($params, $id);
         $types .= 'i';
+    }
+
+    if ($name_contains) {
+        $sql .= "WHERE eventName LIKE ?\n";
+        $pattern = "%" . $name_contains . "%";
+        array_push($params, $pattern);
+        $types .= 's';
     }
 
     $sql .= "ORDER BY eventStartDate DESC\n";

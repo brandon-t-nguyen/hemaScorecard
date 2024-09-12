@@ -22,6 +22,7 @@ function handle_events() {
     $before = null;
     $limit = 50;
     $offset = 0;
+    $name_contains = null;
 
     if (isset($_GET['after'])) {
         $after = $_GET['after'];
@@ -55,7 +56,15 @@ function handle_events() {
         }
     }
 
-    $events = get_events($after, $before, null, $limit, $offset);
+    if (isset($_GET['name_contains'])) {
+        $name_contains = $_GET['name_contains'];
+        if (!preg_match("/[A-Za-z0-9 ]*/", $name_contains)) {
+            response_error("query string param 'name_contains' may only contain alphanumerics and plain spaces", 400);
+            return;
+        }
+    }
+
+    $events = get_events($after, $before, null, $limit, $offset, $name_contains);
     if (count($events) == $limit) {
         // if we hit the limit, provide a pagination link
         $new_offset = $offset + $limit;
